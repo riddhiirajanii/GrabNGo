@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grab n Go — Vendor KDS Portal | IIT Patna</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body style="background: #0f172a; color: #f8fafc;">
+
+  <!-- ====================================================================
+       AUTHENTICATION GATE: Vendor / Kitchen Login Screen
+       ==================================================================== -->
+  <div id="vendor-auth-view" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at top right, #1e293b, #0b0f19); padding: 1.5rem;">
+    <div style="background: #ffffff; color: var(--text-main); border-radius: var(--radius-lg); max-width: 440px; width: 100%; padding: 2.25rem; box-shadow: var(--shadow-xl); border: 1px solid rgba(255,255,255,0.1);">
+      <div style="text-align: center; margin-bottom: 1.75rem;">
+        <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 14px; margin: 0 auto 0.85rem; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);">
+          🍳
+        </div>
+        <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--secondary); letter-spacing: -0.02em;">Vendor KDS Terminal</h2>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">
+          Kitchen Display System • IIT Patna Food Court
+        </p>
+      </div>
+
+      <form id="vendor-login-form">
+        <div class="form-group">
+          <label class="form-label">Registered Staff Email</label>
+          <input type="email" class="form-input" id="vendor-input-email" placeholder="staff@outlet.example" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-input" id="vendor-input-password" placeholder="Enter your account password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn-checkout-primary" style="background:#d97706;margin-top:1.25rem;">
+          <span>Sign In to Kitchen KDS</span> →
+        </button>
+        <p style="font-size:.72rem;color:#64748b;margin-top:.8rem;">Vendor access is provisioned by the Grab n Go administrator and is restricted to the assigned outlet.</p>
+      </form>
+
+      <div style="margin-top: 1.5rem; text-align: center;">
+        <a href="../index.html" style="font-size: 0.78rem; color: #d97706; text-decoration: none; font-weight: 600;">← Return to Food Court</a>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ====================================================================
+       AUTHENTICATED APPLICATION: Vendor Kitchen Display System
+       ==================================================================== -->
+  <div id="vendor-main-view" style="display: none; min-height: 100vh;">
+
+    <!-- Vendor Header -->
+    <header class="site-header" style="background: #1e293b; border-bottom: 1px solid #334155;">
+      <div class="header-container">
+        <div class="brand-wrapper">
+          <div class="brand-logo-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">🍳</div>
+          <div class="brand-info">
+            <h1 style="color: white;" id="kds-outlet-title">Arya Services — Kitchen Display System</h1>
+            <p>Live Kitchen Ticket Processing & Counter Handover</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid #334155; color: #38bdf8; padding: 0.35rem 0.85rem; border-radius: var(--radius-full); font-size: 0.8rem; font-weight: 800; font-family: monospace; display: flex; align-items: center; gap: 0.35rem;">
+            ⏱️ <span id="kds-live-clock">--:--:--</span>
+          </div>
+
+          <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; padding: 0.35rem 0.85rem; border-radius: var(--radius-full); font-size: 0.78rem; font-weight: 700;">
+            <span id="kds-outlet-tag">Outlet: Arya Services</span>
+          </div>
+
+          <button class="btn-sim-action" id="btn-toggle-sound" onclick="toggleAudioChime()" style="background: rgba(255, 255, 255, 0.08); color: #fbbf24; border-color: rgba(255, 255, 255, 0.15); font-size: 0.78rem; font-weight: 700;">
+            🔔 Sound ON
+          </button>
+
+          <button class="rush-mode-toggle-btn" id="btn-kds-rush-mode" onclick="toggleRushMode()">
+            ⚡ Standard Queue Mode
+          </button>
+
+          <button class="btn-sim-action" onclick="toggle86Modal()" style="background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2);">
+            🚫 86 / Stock Manager
+          </button>
+
+          <button class="btn-close-cart" id="btn-vendor-logout" title="Sign Out of Vendor Terminal" style="color: #cbd5e1; background: rgba(255,255,255,0.1);">
+            🚪
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main KDS Kanban Container -->
+    <main class="main-container" style="padding-top: 1.25rem;">
+
+      <!-- Live Operations & Filter Strip -->
+      <div class="kds-stats-strip">
+        <div style="display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;">
+          <div class="kds-stat-pill">
+            <span>🔥 Active Backlog:</span>
+            <strong id="kds-stat-active-count" style="color: #f59e0b;">0</strong>
+          </div>
+          <div class="kds-stat-pill">
+            <span>🍳 In Kitchen:</span>
+            <strong id="kds-stat-cooking-count" style="color: #60a5fa;">0</strong>
+          </div>
+          <div class="kds-stat-pill">
+            <span>🔔 Ready at Counter:</span>
+            <strong id="kds-stat-ready-count" style="color: #34d399;">0</strong>
+          </div>
+          <div class="kds-stat-pill">
+            <span>✅ Handed Over:</span>
+            <strong id="kds-stat-completed-count" style="color: #94a3b8;">0</strong>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+          <!-- Search Box -->
+          <input type="text" id="kds-search-input" class="kds-search-input" placeholder="🔍 Search Token (#A-104) or Dish..." oninput="filterKDSTickets()">
+
+          <!-- Filter View Tabs -->
+          <div class="kds-filter-tabs">
+            <button class="kds-tab-btn active" id="tab-btn-active" onclick="switchKDSView('active')">Pipeline</button>
+            <button class="kds-tab-btn" id="tab-btn-completed" onclick="switchKDSView('completed')">Completed History</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Pipeline Kanban Grid -->
+      <div class="kds-board-grid" id="kds-pipeline-view">
+        
+        <!-- Column 1: Incoming Orders -->
+        <div class="kds-column" style="background: #1e293b; border-color: #334155;">
+          <div class="kds-col-header col-incoming">
+            <h4 style="color: white;">📥 Incoming Orders</h4>
+            <span class="nav-badge" style="background: var(--accent-amber);" id="kds-count-incoming">0</span>
+          </div>
+          <div class="kds-ticket-list" id="kds-incoming-list"></div>
+        </div>
+
+        <!-- Column 2: In Cooking -->
+        <div class="kds-column" style="background: #1e293b; border-color: #334155;">
+          <div class="kds-col-header col-cooking">
+            <h4 style="color: white;">🍳 In Cooking / Preparation</h4>
+            <span class="nav-badge" style="background: var(--accent-blue);" id="kds-count-cooking">0</span>
+          </div>
+          <div class="kds-ticket-list" id="kds-cooking-list"></div>
+        </div>
+
+        <!-- Column 3: Ready for Pickup -->
+        <div class="kds-column" style="background: #1e293b; border-color: #334155;">
+          <div class="kds-col-header col-ready">
+            <h4 style="color: white;">🔔 Ready for Express Pickup</h4>
+            <span class="nav-badge" style="background: var(--primary);" id="kds-count-ready">0</span>
+          </div>
+          <div class="kds-ticket-list" id="kds-ready-list"></div>
+        </div>
+
+      </div>
+
+      <!-- Completed Orders History View -->
+      <div id="kds-completed-view" style="display: none; background: #1e293b; border: 1.5px solid #334155; border-radius: var(--radius-lg); padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+          <div>
+            <h3 style="color: white; margin-bottom: 0.25rem;">✅ Completed & Handed Over Orders Today</h3>
+            <p style="font-size: 0.82rem; color: #94a3b8;">Tokens collected and verified at the Grab n Go express counter</p>
+          </div>
+          <button class="btn-sim-action" onclick="switchKDSView('active')" style="background: #334155; color: white;">
+            ← Back to Active Kitchen Pipeline
+          </button>
+        </div>
+        <div id="kds-completed-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;"></div>
+      </div>
+    </main>
+
+    <!-- 86 / Out of Stock Modal -->
+    <div class="modal-backdrop" id="modal-86-manager">
+      <div class="modal-box" style="background: #ffffff; color: var(--text-main);">
+        <div class="modal-header">
+          <h3>🚫 86 / Item Availability Manager</h3>
+          <button class="btn-close-cart" onclick="toggle86Modal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Clicking a dish toggles whether students can add it to their pre-order cart in real time.
+          </p>
+          <div id="86-items-list" style="max-height: 380px; overflow-y: auto;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="../js/data.js"></script>
+  <script src="vendor.js"></script>
+</body>
+</html>

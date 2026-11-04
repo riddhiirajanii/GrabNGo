@@ -1,0 +1,38 @@
+{
+  "name": "grab-n-go",
+  "version": "1.0.0",
+  "description": "Smart Food Court Solution for IIT Patna by Team H",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node test_backend_api.js",
+    "check": "node --check server.js && node --check js/consumer_app.js && node --check vendor/vendor.js && node --check admin/admin.js && node --check apps/backend/src/api_router.js && node --check apps/backend/src/modules/auth/auth.service.js && node --check apps/backend/src/modules/orders/orders.service.js && node --check apps/backend/src/modules/tokens/tokens.service.js && node --check apps/backend/src/modules/menu/menu.service.js && node --check apps/backend/src/modules/outlets/outlets.service.js && node --check apps/backend/src/database/legacy_json_store.js && node --check scripts/create-account.js && node --check test_backend_api.js && node --check scripts/import-json-to-postgres.js && node --check apps/backend/src/database/prisma.js && node --check apps/backend/src/database/pickup_pin_crypto.js && node --check apps/backend/src/modules/queue_estimator/queue_estimator.service.js && node --check apps/backend/src/modules/analytics/analytics.service.js && node --check scripts/generate-pickup-key.js",
+    "create-account": "node scripts/create-account.js",
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:import:json": "node scripts/import-json-to-postgres.js",
+    "db:seed": "node scripts/import-json-to-postgres.js",
+    "secrets:pickup-pin": "node scripts/generate-pickup-key.js"
+  },
+  "keywords": [
+    "food-court",
+    "iit-patna",
+    "pre-order",
+    "kds",
+    "queue-management"
+  ],
+  "author": "Team H (IIT Patna)",
+  "license": "ISC",
+  "dependencies": {
+    "nodemailer": "^6.10.1",
+    "@prisma/client": "6.19.0",
+    "prisma": "6.19.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

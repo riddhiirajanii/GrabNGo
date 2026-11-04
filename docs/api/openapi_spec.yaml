@@ -1,0 +1,80 @@
+openapi: 3.0.3
+info:
+  title: Grab n Go Campus Food Court API
+  version: 1.0.0
+  description: API serving student pre-ordering, live queue estimation, and vendor kitchen display systems at IIT Patna.
+paths:
+  /api/v1/outlets:
+    get:
+      summary: List all campus outlets with live congestion status
+      responses:
+        '200':
+          description: List of outlets including Arya Services, Angeethi Café, etc.
+  /api/v1/outlets/{id}/menu:
+    get:
+      summary: Fetch full categorized menu for an outlet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Full menu with categories, variants, and stock status.
+  /api/v1/orders:
+    post:
+      summary: Place an advance pre-order with scheduled pickup time
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                outletId:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    type: object
+                scheduledPickupTime:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Order placed successfully with assigned pickup token.
+  /api/v1/orders/{id}/track:
+    get:
+      summary: Get live tracking status and countdown timer for an active order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current order status and estimated completion time.
+  /api/v1/vendor/orders/{id}/status:
+    patch:
+      summary: Vendor KDS status update (PREPARING, READY_FOR_PICKUP, COMPLETED)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [PREPARING, READY_FOR_PICKUP, COMPLETED, CANCELLED]
+      responses:
+        '200':
+          description: Status updated and broadcast to student.

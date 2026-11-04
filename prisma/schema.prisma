@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  VENDOR
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  role         UserRole
+  email        String   @unique
+  name         String
+  studentRoll  String?  @unique
+  outletId     String?
+  passwordSalt String?
+  passwordHash String?
+  disabled     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: SetNull)
+
+  @@index([role])
+  @@index([outletId])
+}
+
+model Outlet {
+  id                 String   @id
+  name               String
+  subtitle           String   @default("")
+  campus             String   @default("IIT Patna")
+  location           String
+  tokenPrefix        String
+  contacts           String[] @default([])
+  rating             Float    @default(0)
+  reviewCount        Int      @default(0)
+  basePrepTime       Int      @default(12)
+  isAcceptingOrders  Boolean  @default(false)
+  freeDelivery       Boolean  @default(false)
+  icon               String   @default("🍽️")
+  accentColor        String   @default("#10b981")
+  tags               String[] @default([])
+  tokenCounter       Int      @default(100)
+  surgeMinutes       Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  users      User[]
+  categories MenuCategory[]
+  items      MenuItem[]
+  orders     Order[]
+
+  @@index([isAcceptingOrders])
+}
+
+model MenuCategory {
+  id        String   @id
+  outletId  String
+  name      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outlet Outlet     @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  items  MenuItem[]
+
+  @@unique([outletId, name])
+  @@index([outletId, sortOrder])
+}
+
+model MenuItem {
+  id          String   @id
+  outletId    String
+  categoryId  String
+  name        String
+  description String?
+  price       Int?
+  isVeg       Boolean  @default(true)
+  isAvailable Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  outlet   Outlet             @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  category MenuCategory       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  variants MenuItemVariant[]
+
+  @@unique([outletId, name])
+  @@index([outletId, isAvailable])
+  @@index([categoryId])
+}
+
+model MenuItemVariant {
+  id         String   @id @default(cuid())
+  menuItemId String
+  label      String
+  price      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@unique([menuItemId, label])
+}
+
+model Order {
+  id                    String   @id
+  token                 String   @unique
+  pickupPinHash         String?
+  pickupPinCiphertext   String?
+  pickupPinIv           String?
+  pickupPinAuthTag      String?
+  outletId              String
+  studentName           String
+  studentRoll           String
+  studentPhone          String   @default("")
+  status                String
+  subtotal              Int
+  convenienceFee        Int      @default(0)
+  discount              Int      @default(0)
+  total                 Int
+  hasPassApplied        Boolean  @default(false)
+  paymentMethod         String   @default("CASH_ON_PICKUP")
+  paymentStatus         String   @default("DUE_ON_PICKUP")
+  academicBreakSlot     String   @default("instant")
+  scheduledPickupTime   DateTime?
+  estimatedReadyAt      DateTime
+  estimatedMinutes      Int
+  placedAt              DateTime
+  updatedAt             DateTime @updatedAt
+  readyAt               DateTime?
+  completedAt           DateTime?
+  notes                 String   @default("")
+  queueSnapshot         Json?
+  itemsSnapshot         Json
+
+  outlet        Outlet              @relation(fields: [outletId], references: [id], onDelete: Restrict)
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+
+  @@index([outletId, status, placedAt])
+  @@index([studentRoll, placedAt])
+  @@index([status, placedAt])
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  menuItemId  String?
+  name        String
+  variant     String?
+  quantity    Int
+  unitPrice   Int
+  categoryId  String?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model OrderStatusHistory {
+  id        String   @id @default(cuid())
+  orderId   String
+  fromStatus String?
+  toStatus  String
+  actorRole String   @default("SYSTEM")
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+}
+
+model Feedback {
+  id         String   @id
+  studentRoll String
+  category   String
+  message    String
+  createdAt  DateTime @default(now())
+
+  @@index([studentRoll, createdAt])
+}
+
+model Subscription {
+  studentRoll String   @id
+  plan        String
+  activeUntil DateTime
+  status      String
+  createdAt   DateTime
+}
+
+model OtpChallenge {
+  email       String   @id
+  name        String
+  studentRoll String
+  otpHash     String
+  expiresAt   DateTime
+  attempts    Int      @default(0)
+  lastSentAt  DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+model AuthRateLimit {
+  key        String   @id
+  count      Int      @default(0)
+  lockedUntil DateTime?
+  lastEventAt DateTime @default(now())
+
+  @@index([lockedUntil])
+}

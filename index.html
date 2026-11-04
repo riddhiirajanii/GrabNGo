@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grab n Go — Campus Food Pre-Ordering | IIT Patna</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* Consumer App Styling Enhancements */
+    .app-nav-link {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-full);
+      transition: var(--transition);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .app-nav-link:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .quick-cuisine-row {
+      display: flex;
+      gap: 0.75rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin-bottom: 2rem;
+      scrollbar-width: none;
+    }
+    .quick-cuisine-row::-webkit-scrollbar { display: none; }
+    .cuisine-bubble {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.65rem 1rem;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      min-width: 86px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--secondary);
+    }
+    .cuisine-bubble:hover, .cuisine-bubble.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+    .cuisine-emoji {
+      font-size: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ====================================================================
+       CONSUMER HEADER: Real Campus Food Delivery & Pre-Order Experience
+       ==================================================================== -->
+  <header class="site-header">
+    <div class="header-container">
+      
+      <!-- Brand & Campus Location Indicator -->
+      <div class="brand-wrapper" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        <div class="brand-info">
+          <h1>Grab n Go</h1>
+          <p>IIT Patna Central Food Court</p>
+        </div>
+      </div>
+
+      <!-- Consumer Navigation -->
+      <nav class="nav-tabs" style="background: transparent; border: none;" aria-label="Main Navigation">
+        <a href="#outlets-section" class="app-nav-link">
+          <span>Outlets</span>
+        </a>
+        <a href="#menu-section" class="app-nav-link">
+          <span>Explore Menu</span>
+        </a>
+        <button class="app-nav-link" id="btn-nav-orders" onclick="openProfileSidebar('orders')" style="background: transparent; border: none; cursor: pointer;">
+          <span> Orders</span>
+          <span class="orders-count-badge" id="nav-orders-count" style="display: none;">0</span>
+        </button>
+        <span class="app-nav-link" id="btn-header-order-track" onclick="openTrackingModal()" style="display: none;">
+           <span id="header-token-label">#A-104 Live</span>
+        </span>
+      </nav>
+
+      <!-- Right Header Actions: Pass, User & Cart -->
+      <div class="header-actions">
+        <button class="pass-pill-btn" id="btn-header-pass">
+          <span>Grab n Go Pass</span>
+        </button>
+
+        <button class="cart-toggle-btn" id="header-cart-toggle">
+          🛒 <span>Cart</span>
+          <span class="cart-counter-bubble" id="cart-counter-bubble" style="display: none;">0</span>
+        </button>
+
+        <button class="app-nav-link" id="btn-user-profile" onclick="handleProfileButtonClick()" style="background: rgba(255,255,255,0.08); border-radius: var(--radius-full); cursor: pointer;">
+          👤 <span id="header-user-name">Sign In</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Campus Status Strip -->
+  <div class="campus-status-strip">
+    <div class="status-strip-content">
+      <div class="status-pill-pulse">
+        <span class="pulse-dot"></span>
+        <span>4 Food Court Counters Live • Express Pickup Active</span>
+      </div>
+      <div class="status-info-tags">
+        <span class="status-item">Current Avg Prep: <strong>~12 mins</strong></span>
+        <span class="status-item">Contactless Express Token Handover</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- Active Order Notification Banner (Shown when user has an active pre-order) -->
+    <div class="active-order-banner" id="active-order-banner" style="display: none;">
+      <div class="active-order-left">
+        <span class="token-big-badge" id="banner-token-badge">#A-104</span>
+        <div class="active-order-status">
+          <h4 id="banner-status-title">Order Placed — Kitchen Notified</h4>
+          <p id="banner-eta-sub">Arya Services • Ready in ~12 mins</p>
+        </div>
+      </div>
+      <div class="active-order-right">
+        <button class="btn-track-order" onclick="openTrackingModal()">
+          Track Pickup Live
+        </button>
+      </div>
+    </div>
+
+    <!-- Consumer Hero Section -->
+    <div class="student-hero">
+      <div class="hero-glow-1"></div>
+      <div class="hero-glow-2"></div>
+      <div class="student-hero-content">
+        <div class="hero-badge-pill">
+          <span>Zero Counter Waiting • Express Campus Dining</span>
+        </div>
+        <h2>Hot Food Ready When Your Class Ends.<br><span class="hero-highlight">Pre-Order, Grab & Go.</span></h2>
+        <p>
+          Skip the 20-minute food court rush. Order ahead from campus outlets, check live kitchen queue times, and pick up your meal at express counters with your assigned token.
+        </p>
+        <div class="hero-feature-tags">
+          <div class="hero-pill">5-15 Min Express Pickup</div>
+          <div class="hero-pill">Scheduled Break Slots</div>
+          <div class="hero-pill">Express Pickup Tokens</div>
+          <div class="hero-pill">130+ Authentic Dishes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Cuisines / Category Highlights -->
+    <div class="quick-cuisine-row">
+      <div class="cuisine-bubble active" onclick="filterByCuisine('all', this)">
+        <span class="cuisine-emoji">🍽️</span>
+        <span>All</span>
+      </div>
+      <div class="cuisine-bubble" onclick="filterByCuisine('cat_rice', this)">
+        <span class="cuisine-emoji">🍗</span>
+        <span>Biryani</span>
+      </div>
+      <div class="cuisine-bubble" onclick="filterByCuisine('cat_tandoor', this)">
+        <span class="cuisine-emoji">🫓</span>
+        <span>Tandoor</span>
+      </div>
+      <div class="cuisine-bubble" onclick="filterByCuisine('cat_rotis_rolls', this)">
+        <span class="cuisine-emoji">🌯</span>
+        <span>Rolls</span>
+      </div>
+      <div class="cuisine-bubble" onclick="filterByCuisine('cat_noodles_maggi', this)">
+        <span class="cuisine-emoji">🍜</span>
+        <span>Maggi & Chow</span>
+      </div>
+      <div class="cuisine-bubble" onclick="filterByCuisine('cat_chilly_dishes', this)">
+        <span class="cuisine-emoji">🌶️</span>
+        <span>Chinese</span>
+      </div>
+      <div class="cuisine-bubble" onclick="filterByCuisine('cat_paneer', this)">
+        <span class="cuisine-emoji">🧀</span>
+        <span>Paneer</span>
+      </div>
+      <div class="cuisine-bubble" onclick="filterByCuisine('cat_sweets', this)">
+        <span class="cuisine-emoji">🍨</span>
+        <span>Desserts</span>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         SECTION 1: Campus Dining Outlets
+         ==================================================================== -->
+    <div class="section-heading-bar" id="outlets-section">
+      <div>
+        <h3> Campus Dining Outlets</h3>
+        <p class="section-subtitle">Real-time crowd levels and preparation turnaround</p>
+      </div>
+    </div>
+
+    <div class="outlets-grid" id="outlets-grid">
+      <!-- Rendered dynamically by js/consumer_app.js -->
+    </div>
+
+    <!-- ====================================================================
+         SECTION 2: Active Outlet Menu Showcase
+         ==================================================================== -->
+    <div class="menu-showcase-card" id="menu-section">
+      <div class="menu-outlet-info-row">
+        <div class="menu-outlet-title">
+          <h3 id="showcase-outlet-name">Arya Services</h3>
+          <p id="showcase-outlet-sub">North Indian, Tandoor, Chinese & Traditional Sweets • IIT Patna Food Court</p>
+        </div>
+        <div class="menu-outlet-meta">
+          <span class="meta-pill" id="showcase-outlet-phone">9835493001 / 9572544000</span>
+          <span class="meta-pill" id="showcase-outlet-eta">~14 mins pickup</span>
+          <span class="meta-pill" style="color: #059669; font-weight: 700;">Free Express Pickup</span>
+        </div>
+      </div>
+
+      <!-- Menu Controls: Search, Veg/Non-Veg Toggles -->
+      <div class="menu-controls-bar">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="menu-search-input" id="menu-search-input" placeholder="Search across 130+ dishes (Biryani, Tandoor, Paneer, Maggi...)...">
+        </div>
+
+        <div class="diet-toggle-group">
+          <button class="diet-btn active" data-diet="all">All Dishes</button>
+          <button class="diet-btn" data-diet="veg">🌱 Veg Only</button>
+          <button class="diet-btn" data-diet="nonveg">🍗 Non-Veg</button>
+        </div>
+      </div>
+
+      <!-- Category Pills Scrollable Row -->
+      <div class="category-scroll-wrapper">
+        <div class="category-pills-list" id="category-pills-list">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Zomato-Style Spacious Menu Container -->
+      <div id="zomato-menu-container" class="zomato-menu-wrapper">
+        <!-- Rendered dynamically by category sections -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ====================================================================
+       Slide-Over Profile & Account Sidebar (Zomato-Style)
+       ==================================================================== -->
+  <div class="profile-overlay" id="profile-overlay" onclick="closeProfileSidebar()"></div>
+  <aside class="profile-drawer" id="profile-drawer" aria-label="Student Profile & Orders Drawer">
+    
+    <!-- Drawer Header / User Banner -->
+    <div class="profile-drawer-header">
+      <div class="profile-user-summary">
+        <div class="profile-avatar-circle" id="sidebar-avatar-initials">RR</div>
+        <div class="profile-user-meta">
+          <div class="profile-user-name" id="sidebar-user-name">Riddhi Umesh Rajani</div>
+          <div class="profile-user-roll" id="sidebar-user-roll">2401ME75 • B.Tech Mechanical</div>
+          <div class="profile-user-email" id="sidebar-user-email">riddhi_2401me75@iitp.ac.in</div>
+        </div>
+      </div>
+      <button class="btn-close-profile" id="btn-close-profile" onclick="closeProfileSidebar()" title="Close Profile Sidebar">✕</button>
+    </div>
+
+    <!-- Pass Membership Ribbon -->
+    <div class="profile-pass-ribbon" id="profile-pass-ribbon">
+      <div class="pass-ribbon-left">
+        <span class="pass-sparkle">✨</span>
+        <div>
+          <div class="pass-ribbon-title">Grab n Go Student Pass</div>
+          <div class="pass-ribbon-sub" id="sidebar-pass-sub">Active • ₹0 Convenience Fees on All Outlets</div>
+        </div>
+      </div>
+      <button class="pass-ribbon-action" id="sidebar-pass-btn" onclick="openPassFromSidebar()">Details</button>
+    </div>
+
+    <!-- Navigation Tabs (Previous Orders / Contact Us / Account) -->
+    <div class="profile-tabs-bar">
+      <button class="profile-tab-btn active" id="tab-btn-orders" onclick="switchProfileTab('orders')">
+        📦 Previous Orders (<span id="profile-orders-count">0</span>)
+      </button>
+      <button class="profile-tab-btn" id="tab-btn-contact" onclick="switchProfileTab('contact')">
+        📞 Contact Us
+      </button>
+      <button class="profile-tab-btn" id="tab-btn-account" onclick="switchProfileTab('account')">
+        👤 Account
+      </button>
+    </div>
+
+    <!-- Drawer Content Body -->
+    <div class="profile-drawer-body">
+      
+      <!-- Panel 1: Previous Orders (Zomato Style) -->
+      <div class="profile-panel active" id="panel-orders">
+        <div class="panel-section-title">
+          <h4>Your Order History</h4>
+          <span class="panel-subtitle">Reorder your favourite meals in 1-click</span>
+        </div>
+        <div id="previous-orders-list" class="previous-orders-container">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </div>
+
+      <!-- Panel 2: Contact Us & Campus Support -->
+      <div class="profile-panel" id="panel-contact">
+        <div class="panel-section-title">
+          <h4>Campus Dining Helpdesk</h4>
+          <span class="panel-subtitle">We are here to assist with your food court orders</span>
+        </div>
+        
+        <!-- Quick Support Cards -->
+        <div class="contact-cards-stack">
+          <!-- Arya Services Desk -->
+          <div class="contact-card">
+            <div class="contact-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #059669;">🍛</div>
+            <div class="contact-card-info">
+              <div class="contact-card-title">Arya Services Kitchen Counter</div>
+              <div class="contact-card-sub">Food Court Ground Floor • Express Counter</div>
+              <div class="contact-card-phone">📞 9835493001, 9572544000</div>
+            </div>
+            <a href="tel:9835493001" class="btn-contact-action">Call</a>
+          </div>
+
+         
+
+          <!-- Counter Operating Hours -->
+          <div class="support-hours-banner">
+            <div>
+              <strong>Operating Hours</strong>
+              <p>Counters open daily: 8:00 AM – 11:30 PM</p>
+            </div>
+            <span class="support-live-badge">Live Counter</span>
+          </div>
+
+          <!-- Direct Feedback Box -->
+          <div class="contact-feedback-box">
+            <h5> Send a Quick Message / Feedback</h5>
+            <form id="contact-feedback-form" onsubmit="handleContactFeedback(event)">
+              <div class="form-group" style="margin-bottom: 0.65rem;">
+                <label class="form-label" style="font-size: 0.76rem;">Topic</label>
+                <select class="form-input" id="feedback-category" style="font-size: 0.82rem; padding: 0.5rem 0.65rem;">
+                  <option value="pickup">Express Counter Handover / Pickup Question</option>
+                  <option value="quality">Meal Quality or Custom Request Feedback</option>
+                  <option value="pass">Grab n Go Student Pass Question</option>
+                  <option value="suggestion">New Dish or Outlet Suggestion</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0.65rem;">
+                <label class="form-label" style="font-size: 0.76rem;">Your Message / Issue</label>
+                <textarea class="form-input" id="feedback-message" rows="3" placeholder="Tell us how we can help..." style="font-size: 0.82rem; padding: 0.5rem 0.65rem;" required></textarea>
+              </div>
+              <button type="submit" class="btn-checkout-primary" style="padding: 0.65rem; font-size: 0.85rem; width: 100%;">
+                Submit to Dining Desk
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 3: Account & Student Settings -->
+      <div class="profile-panel" id="panel-account">
+        <div class="panel-section-title">
+          <h4>Account Details</h4>
+          <span class="panel-subtitle">Manage your campus dining profile credentials</span>
+        </div>
+        
+        <div class="account-card-box">
+          <div class="account-field-row">
+            <span class="account-field-label">Student Name</span>
+            <strong id="account-detail-name">Riddhi Umesh Rajani</strong>
+          </div>
+          <div class="account-field-row">
+            <span class="account-field-label">Roll Number</span>
+            <strong id="account-detail-roll">2401ME75</strong>
+          </div>
+          <div class="account-field-row">
+            <span class="account-field-label">Institution</span>
+            <strong>IIT Patna (Bihta Campus)</strong>
+          </div>
+          <div class="account-field-row">
+            <span class="account-field-label">Pass Subscription</span>
+            <strong id="account-detail-pass" style="color: #059669;">Active (₹0 Fee Tier)</strong>
+          </div>
+          <div class="account-field-row">
+            <span class="account-field-label">Preferred Break Slot</span>
+            <strong>Lunch Break Batch A (1:15 PM)</strong>
+          </div>
+        </div>
+
+        <button class="btn-sim-action" onclick="signOutUser()" style="width: 100%; margin-top: 1.5rem; padding: 0.75rem; color: #ef4444; border-color: #ef4444; font-weight: 700;">
+          Sign Out of Student Portal
+        </button>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ====================================================================
+       Slide-Over Cart Drawer
+       ==================================================================== -->
+  <div class="cart-overlay" id="cart-overlay"></div>
+  <aside class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">
+      <h3><span>Your Express Order</span></h3>
+      <button class="btn-close-cart" id="btn-close-cart">✕</button>
+    </div>
+
+    <div class="cart-body">
+      <!-- Empty State -->
+      <div class="cart-empty-state" id="cart-empty-state">
+        <h4 style="font-size: 1.1rem; color: var(--secondary); margin-bottom: 0.25rem;">Your Cart is Empty</h4>
+        <p style="font-size: 0.82rem;">Browse Arya Services menu and add items to pre-order</p>
+      </div>
+
+      <!-- Cart Items List -->
+      <div class="cart-items-list" id="cart-items-container" style="display: none;"></div>
+
+      <!-- Scheduled Pickup Slot Picker -->
+      <div class="pickup-slot-card">
+        <div class="slot-card-header">
+          <span>Select Scheduled Pickup Slot</span>
+        </div>
+        <div class="slot-pills-grid">
+          <label class="slot-pill-option active">
+            <div>
+              <div class="slot-label-text">Instant (~12-15 mins)</div>
+              <div class="slot-sub-text">As soon as freshly prepared</div>
+            </div>
+            <input type="radio" name="pickup-slot" value="instant" checked>
+          </label>
+          <label class="slot-pill-option">
+            <div>
+              <div class="slot-label-text">1:15 PM (Lunch Break Batch A)</div>
+              <div class="slot-sub-text">Ready right when lecture concludes</div>
+            </div>
+            <input type="radio" name="pickup-slot" value="1:15 PM">
+          </label>
+          <label class="slot-pill-option">
+            <div>
+              <div class="slot-label-text">1:30 PM (Lunch Break Batch B)</div>
+              <div class="slot-sub-text">Ideal for Block 3 students</div>
+            </div>
+            <input type="radio" name="pickup-slot" value="1:30 PM">
+          </label>
+          <label class="slot-pill-option">
+            <div>
+              <div class="slot-label-text">5:15 PM (Post-Lab Evening Snack)</div>
+              <div class="slot-sub-text">Hot snacks & chai interval</div>
+            </div>
+            <input type="radio" name="pickup-slot" value="5:15 PM">
+          </label>
+        </div>
+      </div>
+
+      <!-- Cooking Notes -->
+      <div>
+        <label class="form-label">Special Cooking Instructions</label>
+        <textarea class="cooking-notes-box" id="cart-cooking-notes" placeholder="e.g. Less spicy, keep rotis hot, pack spoons separately..."></textarea>
+      </div>
+
+      <!-- Pass Promo -->
+      <div class="pass-promo-strip">
+        <div class="pass-promo-left">
+          <span>✨</span>
+          <span><strong>Grab n Go Pass:</strong> Subscription activation is coming later.</span>
+        </div>
+        <button class="pass-promo-btn" onclick="document.getElementById('modal-pass').classList.add('active')">
+          View Pass
+        </button>
+      </div>
+    </div>
+
+    <!-- Bill Summary & Checkout Button -->
+    <div class="cart-footer" id="cart-footer" style="display: none;">
+      <div class="bill-row">
+        <span>Items Subtotal</span>
+        <span id="bill-subtotal">₹0</span>
+      </div>
+      <div class="bill-row">
+        <span>Campus Convenience Fee</span>
+        <span id="bill-conv-fee">₹5</span>
+      </div>
+      <div class="bill-row discount-row" id="bill-discount-row" style="display: none;">
+        <span>Student Lunch Special Discount</span>
+        <span id="bill-discount-val">-₹15</span>
+      </div>
+      <div class="bill-total-row">
+        <span>Total Payable</span>
+        <span id="bill-total-amount">₹0</span>
+      </div>
+      <button class="btn-checkout-primary" id="btn-checkout-primary">
+        <span>Proceed to Express Checkout</span> →
+      </button>
+    </div>
+  </aside>
+
+  <!-- ====================================================================
+       Modal: User Authentication / Profile
+       ==================================================================== -->
+  <div class="modal-backdrop" id="modal-auth">
+    <div class="modal-box" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3 id="auth-modal-title">👤 Account Sign In</h3>
+        <button class="btn-close-cart" onclick="closeAuthModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="auth-logged-out-state">
+          <form id="auth-login-form">
+            <p style="font-size:0.78rem;color:#64748b;margin:0 0 0.9rem;">Verify access to your IIT Patna institutional email. A one-time code will be sent to your @iitp.ac.in mailbox.</p>
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" class="form-input" id="auth-input-name" placeholder="Your Full Name" autocomplete="name" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">IIT Patna Roll Number</label>
+              <input type="text" class="form-input" id="auth-input-id" placeholder="e.g. 2401ME75" autocomplete="username" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">IIT Patna Email</label>
+              <input type="email" class="form-input" id="auth-input-email" placeholder="username@iitp.ac.in" autocomplete="email" required>
+            </div>
+            <button type="button" id="auth-request-otp" class="btn-checkout-primary" style="margin-top:1rem;">
+              Send verification code
+            </button>
+            <div id="auth-otp-step" style="display:none;margin-top:1rem;">
+              <div class="form-group">
+                <label class="form-label" for="auth-input-otp">6-digit email verification code</label>
+                <input type="text" class="form-input" id="auth-input-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="Enter code from email">
+              </div>
+              <button type="submit" class="btn-checkout-primary">Verify email & sign in</button>
+            </div>
+            <p style="font-size:.7rem;color:#94a3b8;margin-top:.8rem;">Email OTP verifies mailbox access. It is not a substitute for IITP's official SSO or registrar-backed roll-number verification.</p>
+          </form>
+        </div>
+
+        <div id="auth-logged-in-state" style="display: none; text-align: center;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎓</div>
+          <h4 id="auth-profile-name" style="font-size: 1.2rem; color: var(--secondary);">Riddhi Umesh Rajani</h4>
+          <p id="auth-profile-id" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">2401ME75 • IIT Patna</p>
+          
+          <button class="btn-sim-action" onclick="signOutUser()" style="width: 100%; padding: 0.65rem; color: #ef4444; border-color: #ef4444;">
+            Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       Modal: Express Checkout & Token Allocation
+       ==================================================================== -->
+  <div class="modal-backdrop" id="modal-checkout">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>🎫 Confirm Pre-Order</h3>
+        <button class="btn-close-cart" id="btn-close-checkout">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="checkout-form">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-input" id="input-student-name" readonly required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Roll Number / Student ID</label>
+            <input type="text" class="form-input" id="input-student-roll" readonly required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number (for pickup coordination)</label>
+            <input type="tel" class="form-input" id="input-student-phone" placeholder="10-digit mobile number" autocomplete="tel" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Payment</label>
+            <div class="payment-opt-card active" style="cursor:default;">
+              <strong>Pay at the outlet counter</strong>
+              <div style="font-size:.75rem;color:#64748b;margin-top:4px;">Online payment is not enabled yet. No amount is charged while placing this order.</div>
+            </div>
+          </div>
+          <button type="submit" class="btn-checkout-primary" style="margin-top: 1.5rem;">
+            <span>Confirm Order & Allocate Token</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       Modal: Live Order Tracker & Token Display
+       ==================================================================== -->
+  <div class="modal-backdrop" id="modal-tracking">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>Live Order & Token Tracker</h3>
+        <button class="btn-close-cart" id="btn-close-tracking">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="tracking-token-hero">
+          <div class="token-headline">Your Express Pickup Token</div>
+          <div class="token-mega-number" id="track-token-display">#A-104</div>
+          <div class="token-outlet-info" id="track-outlet-name">Arya Services Express Counter</div>
+          <div class="token-eta-pill">
+            <span>⏱Estimated Ready In:</span>
+            <strong id="track-countdown-timer">12m 45s</strong>
+          </div>
+        </div>
+
+        <div class="order-stepper">
+          <div class="stepper-step completed">
+            <div class="step-circle">1</div>
+            <span class="step-label">Placed</span>
+          </div>
+          <div class="stepper-step completed">
+            <div class="step-circle">2</div>
+            <span class="step-label">Confirmed</span>
+          </div>
+          <div class="stepper-step active">
+            <div class="step-circle">3</div>
+            <span class="step-label">Cooking</span>
+          </div>
+          <div class="stepper-step">
+            <div class="step-circle">4</div>
+            <span class="step-label">Ready</span>
+          </div>
+          <div class="stepper-step">
+            <div class="step-circle">5</div>
+            <span class="step-label">Collected</span>
+          </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 10px; padding: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--secondary);" id="track-pickup-instructions">
+              Walk to Express Counter at Arya Services
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
+              Show this token screen at the counter for instant handover. No standing in line!
+            </div>
+          </div>
+          <div style="background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; text-align: center; flex-shrink: 0;">
+            <div style="font-size: 1.8rem; line-height: 1;">📱</div>
+            <div style="font-size: 0.6rem; font-weight: 700; color: #475569;">TOKEN QR</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <h5 style="font-size: 0.82rem; font-weight: 700; color: var(--secondary); margin-bottom: 0.4rem;">Order Items:</h5>
+          <div id="track-items-summary"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       Modal: Grab n Go Pass Subscription
+       ==================================================================== -->
+  <div class="modal-backdrop" id="modal-pass">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>✨ Grab n Go Student Pass</h3>
+        <button class="btn-close-cart" id="btn-close-pass">✕</button>
+      </div>
+      <div class="modal-body" style="text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎓</div>
+        <h4 style="font-size: 1.3rem; font-weight: 800; color: var(--secondary); margin-bottom: 0.5rem;">
+          IIT Patna Dining Pass
+        </h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.5rem;">
+          Grab n Go Pass is not available yet. Subscription benefits will be enabled after secure payment processing is integrated.
+        </p>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; text-align: left; margin-bottom: 1.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem;">
+             <span><strong>Pass activation coming soon</strong></span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem;">
+             <span><strong>Secure checkout</strong> will be available after payment integration</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem;">
+             <span><strong>Pass benefits</strong> will be announced when the feature launches</span>
+          </div>
+        </div>
+
+        <div style="font-size: 1rem; font-weight: 800; color: var(--secondary); margin-bottom: 1rem;">
+          Coming soon
+        </div>
+
+        <button class="btn-checkout-primary" id="btn-activate-pass" disabled title="Pass activation is unavailable until payments are configured">
+          Pass activation unavailable
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Professional Consumer Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <h4>Grab n Go — Smart Food Court Solution</h4>
+        <p>Serving Indian Institute of Technology Patna (IIT Patna)</p>
+        <p style="color: #64748b; margin-top: 0.25rem;">Team  • Support: <strong>9340618368</strong></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/consumer_app.js"></script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grab n Go — Campus Admin Portal | IIT Patna</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ====================================================================
+       AUTHENTICATION GATE: Campus Admin Login Screen
+       ==================================================================== -->
+  <div id="admin-auth-view" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at top right, #1e293b, #0f172a); padding: 1.5rem;">
+    <div style="background: #ffffff; border-radius: var(--radius-lg); max-width: 440px; width: 100%; padding: 2.25rem; box-shadow: var(--shadow-xl); border: 1px solid rgba(255,255,255,0.1);">
+      <div style="text-align: center; margin-bottom: 1.75rem;">
+        <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 14px; margin: 0 auto 0.85rem; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);">
+          📊
+        </div>
+        <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--secondary); letter-spacing: -0.02em;">Campus Admin Portal</h2>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">
+          IIT Patna Food Court Supervisory Committee
+        </p>
+      </div>
+
+      <form id="admin-login-form">
+        <div class="form-group">
+          <label class="form-label">Administrator IITP Webmail</label>
+          <input type="email" class="form-input" id="admin-input-email" placeholder="admin@iitp.ac.in" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-input" id="admin-input-key" placeholder="Enter your password" autocomplete="current-password" required>
+        </div>
+
+        <button type="submit" class="btn-checkout-primary" style="background: #1d4ed8; margin-top: 1.25rem;">
+          <span>Sign In to Admin Dashboard</span> →
+        </button>
+      </form>
+
+      <div style="margin-top: 1.5rem; text-align: center;">
+        <a href="../index.html" style="font-size: 0.78rem; color: #1d4ed8; text-decoration: none; font-weight: 600;">← Return to Food Court</a>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ====================================================================
+       AUTHENTICATED APPLICATION: Campus Admin Portal
+       ==================================================================== -->
+  <div id="admin-main-view" style="display: none; min-height: 100vh;">
+
+    <!-- Admin Header -->
+    <header class="site-header">
+      <div class="header-container">
+        <div class="brand-wrapper">
+          <div class="brand-logo-badge" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">📊</div>
+          <div class="brand-info">
+            <h1>Grab n Go <span class="brand-tag" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border-color: rgba(96, 165, 250, 0.3);">Admin</span></h1>
+            <p>IIT Patna Food Court Supervisory & Analytics</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); padding: 0.35rem 0.85rem; border-radius: var(--radius-full); font-size: 0.78rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🛡️</span>
+            <span id="admin-officer-name">Dining Supervisory Committee</span>
+          </div>
+
+          <button class="btn-close-cart" id="btn-admin-logout" title="Sign Out of Admin Portal" style="color: #cbd5e1; background: rgba(255,255,255,0.1);">
+            🚪
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container" style="padding-top: 1.5rem;">
+
+      <!-- Section Heading -->
+      <div class="section-heading-bar">
+        <div>
+          <h3>📊 Campus Food Court Operations & Order-Value Analytics</h3>
+          <p class="section-subtitle">Live operational metrics and order values. Online payment and settlement processing are not enabled.</p>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="admin-kpis-grid">
+        <div class="kpi-card">
+          <div class="kpi-text-box">
+            <h5>Total Orders Today</h5>
+            <div class="kpi-value" id="admin-kpi-orders">—</div>
+            <span class="kpi-sub">Calculated from recorded orders</span>
+          </div>
+          <div class="kpi-icon-bubble" style="background: #eff6ff; color: #2563eb;">📦</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-text-box">
+            <h5>Break Time Saved</h5>
+            <div class="kpi-value" id="admin-kpi-saved">—</div>
+            <span class="kpi-sub">Based on configured time-saved assumption</span>
+          </div>
+          <div class="kpi-icon-bubble" style="background: #ecfdf5; color: #059669;">⏱️</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-text-box">
+            <h5>Avg Queue Turnaround</h5>
+            <div class="kpi-value" id="admin-kpi-turnaround">—</div>
+            <span class="kpi-sub">Average estimated preparation time</span>
+          </div>
+          <div class="kpi-icon-bubble" style="background: #fffbeb; color: #b45309;">⚡</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-text-box">
+            <h5>Verified Pickups</h5>
+            <div class="kpi-value" id="admin-kpi-pickups">—</div>
+            <span class="kpi-sub">Pickup completion count</span>
+          </div>
+          <div class="kpi-icon-bubble" style="background: #fdf2f8; color: #db2777;">🎯</div>
+        </div>
+      </div>
+
+      <!-- Charts & Visuals -->
+      <div class="admin-charts-grid">
+        <!-- Hourly Break Rush Histogram -->
+        <div class="admin-card">
+          <h4>📈 Hourly Break-Time Order Volume</h4>
+          <p class="admin-card-subtitle">Peak surges observed around academic timetables</p>
+          <div class="rush-histogram">
+            <div class="hist-bar-col">
+              <span class="hist-count">24</span>
+              <div class="hist-bar" style="height: 25%;"></div>
+              <span class="hist-label">11 AM</span>
+            </div>
+            <div class="hist-bar-col">
+              <span class="hist-count">58</span>
+              <div class="hist-bar" style="height: 45%;"></div>
+              <span class="hist-label">12 PM</span>
+            </div>
+            <div class="hist-bar-col">
+              <span class="hist-count">142</span>
+              <div class="hist-bar peak-bar" style="height: 95%;"></div>
+              <span class="hist-label">1 PM (Rush)</span>
+            </div>
+            <div class="hist-bar-col">
+              <span class="hist-count">88</span>
+              <div class="hist-bar" style="height: 60%;"></div>
+              <span class="hist-label">2 PM</span>
+            </div>
+            <div class="hist-bar-col">
+              <span class="hist-count">35</span>
+              <div class="hist-bar" style="height: 30%;"></div>
+              <span class="hist-label">3 PM</span>
+            </div>
+            <div class="hist-bar-col">
+              <span class="hist-count">48</span>
+              <div class="hist-bar" style="height: 40%;"></div>
+              <span class="hist-label">4 PM</span>
+            </div>
+            <div class="hist-bar-col">
+              <span class="hist-count">115</span>
+              <div class="hist-bar peak-bar" style="height: 80%;"></div>
+              <span class="hist-label">5 PM (Snack)</span>
+            </div>
+            <div class="hist-bar-col">
+              <span class="hist-count">72</span>
+              <div class="hist-bar" style="height: 55%;"></div>
+              <span class="hist-label">6 PM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pass & Subscription Summary -->
+        <div class="admin-card">
+          <h4>✨ Grab n Go Pass Metrics</h4>
+          <p class="admin-card-subtitle">Student monthly membership retention</p>
+          <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.25rem;">
+                <span>Active Pass Holders</span>
+                <strong>438 Students</strong>
+              </div>
+              <div style="background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden;">
+                <div style="background: #10b981; width: 68%; height: 100%;"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.25rem;">
+                <span>Zero-Fee Orders Processed</span>
+                <strong>2,840</strong>
+              </div>
+              <div style="background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden;">
+                <div style="background: #3b82f6; width: 82%; height: 100%;"></div>
+              </div>
+            </div>
+            <div style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.8rem; color: #475569;">
+              💡 Pass members save an average of <strong>₹65/week</strong> and reduce counter order processing time by <strong>100%</strong>.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outlets & Financial Settlement Table -->
+      <div class="admin-card" style="margin-bottom: 2rem;">
+        <h4>🏬 Campus Outlet Operations & Daily Vendor Payouts</h4>
+        <p class="admin-card-subtitle">Real-time status, active queue, gross turnover, campus commission (3.5%), and net settlement</p>
+        <div class="data-table-wrapper">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Outlet Details</th>
+                <th>Active Orders</th>
+                <th>Est. Turnaround</th>
+                <th>Congestion</th>
+                <th>Gross Order Value</th>
+                <th>Platform Commission (3.5%)</th>
+                <th>Estimated Vendor Net</th>
+                <th>Menu State</th>
+              </tr>
+            </thead>
+            <tbody id="admin-outlet-table-body">
+              <!-- Rendered by admin.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <h4>Grab n Go — Campus Dining Administration</h4>
+          <p>Indian Institute of Technology Patna (IIT Patna)</p>
+          <p style="color: #64748b;">Supervisory Control & Settlement Operations</p>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="../js/data.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

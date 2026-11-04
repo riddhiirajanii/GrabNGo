@@ -1,0 +1,278 @@
+{
+  "outlet": {
+    "id": "outlet-arya-services-01",
+    "name": "Arya Services",
+    "campus": "IIT Patna",
+    "location": "Food Court / Campus Vendor Area",
+    "contacts": ["9835493001", "9572544000"],
+    "free_delivery": true,
+    "rating": 4.2,
+    "average_prep_time_minutes": 15,
+    "current_queue_status": "MODERATE",
+    "is_accepting_orders": true
+  },
+  "categories": [
+    {
+      "id": "cat_mushrooms",
+      "name": "Mushrooms",
+      "items": [
+        { "name": "Mushroom Butter Masala", "price": 180, "is_veg": true },
+        { "name": "Mushroom Masala", "price": 180, "is_veg": true },
+        { "name": "Mushroom Do Payaja", "price": 180, "is_veg": true },
+        { "name": "Mushroom Handi", "price": 190, "is_veg": true },
+        { "name": "Mushroom Kadhai", "price": 190, "is_veg": true },
+        { "name": "Mushroom Dehati", "price": 190, "is_veg": true },
+        { "name": "Mattar Mushroom", "price": 180, "is_veg": true },
+        { "name": "Sahi Mushroom", "price": 180, "is_veg": true },
+        { "name": "Mushroom Diwani", "price": 190, "is_veg": true },
+        { "name": "Mushroom Panjabi", "price": 190, "is_veg": true },
+        { "name": "Mushroom Ishtu", "price": 180, "is_veg": true },
+        { "name": "Mushroom Chatpata", "price": 180, "is_veg": true }
+      ]
+    },
+    {
+      "id": "cat_tandoor",
+      "name": "Tandoor",
+      "items": [
+        { "name": "Tandoori Roti (Plain)", "price": 12, "is_veg": true },
+        { "name": "Tandoori Roti (Butter)", "price": 15, "is_veg": true },
+        { "name": "Naan (Plain)", "price": 30, "is_veg": true },
+        { "name": "Naan (Butter)", "price": 35, "is_veg": true },
+        { "name": "Paneer Tikka", "price": 180, "is_veg": true },
+        { "name": "Chicken Tikka", "price": 200, "is_veg": false },
+        {
+          "name": "Tandoori Chicken",
+          "is_veg": false,
+          "variants": [
+            { "label": "Half", "price": 250 },
+            { "label": "Full", "price": 400 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cat_chicken_egg",
+      "name": "Chicken and Egg",
+      "items": [
+        { "name": "Chicken Butter Masala", "price": 200, "is_veg": false },
+        { "name": "Chicken Masala", "price": 220, "is_veg": false },
+        { "name": "Chicken Do Payaja", "price": 200, "is_veg": false },
+        { "name": "Chicken Handi", "price": 220, "is_veg": false },
+        { "name": "Chicken Kadhai", "price": 220, "is_veg": false },
+        {
+          "name": "Chicken Dehati",
+          "is_veg": false,
+          "variants": [
+            { "label": "Half", "price": 250 },
+            { "label": "Full", "price": 450 }
+          ]
+        },
+        { "name": "Chicken Ishtu", "price": 220, "is_veg": false },
+        { "name": "Chicken Kali Mirch", "price": 200, "is_veg": false },
+        { "name": "Chicken Kashmiri", "price": 220, "is_veg": false },
+        { "name": "Chicken Punjabi", "price": 220, "is_veg": false },
+        { "name": "Chicken Kassa", "price": 220, "is_veg": false },
+        { "name": "Chicken Curry", "price": 180, "is_veg": false },
+        {
+          "name": "Chicken Fry",
+          "is_veg": false,
+          "variants": [
+            { "label": "Half", "price": 250 },
+            { "label": "Full", "price": 400 }
+          ]
+        },
+        { "name": "Chicken Korma", "price": 220, "is_veg": false },
+        { "name": "Chicken Hindustani", "price": 220, "is_veg": false },
+        { "name": "Egg Curry", "price": 80, "is_veg": false },
+        { "name": "Egg Do Payaja", "price": 90, "is_veg": false },
+        { "name": "Egg Kadhai", "price": 90, "is_veg": false },
+        { "name": "Egg Handi", "price": 100, "is_veg": false }
+      ]
+    },
+    {
+      "id": "cat_burgers_pizzas",
+      "name": "Burgers and Pizzas",
+      "items": [
+        { "name": "Veg Burger", "price": 30, "is_veg": true },
+        { "name": "Paneer Burger", "price": 40, "is_veg": true },
+        {
+          "name": "Grilled Sandwich",
+          "is_veg": true,
+          "variants": [
+            { "label": "Regular", "price": 35 },
+            { "label": "Large", "price": 60 }
+          ]
+        },
+        {
+          "name": "Veg Pizza",
+          "is_veg": true,
+          "variants": [
+            { "label": "Regular", "price": 60 },
+            { "label": "Large", "price": 100 }
+          ]
+        },
+        {
+          "name": "Paneer Pizza",
+          "is_veg": true,
+          "variants": [
+            { "label": "Regular", "price": 80 },
+            { "label": "Large", "price": 120 }
+          ]
+        },
+        {
+          "name": "Chicken Pizza",
+          "is_veg": false,
+          "variants": [
+            { "label": "Regular", "price": 80 },
+            { "label": "Large", "price": 120 }
+          ]
+        },
+        {
+          "name": "Mushroom Pizza",
+          "is_veg": true,
+          "variants": [
+            { "label": "Regular", "price": 80 },
+            { "label": "Large", "price": 120 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cat_rotis_rolls",
+      "name": "Rotis & Rolls",
+      "items": [
+        { "name": "Plain Roti Tawa", "price": 7, "is_veg": true },
+        { "name": "Butter Roti Tawa", "price": 10, "is_veg": true },
+        { "name": "Egg Roll", "price": 40, "is_veg": false },
+        { "name": "Chicken Roll", "price": 80, "is_veg": false },
+        { "name": "Veg Roll", "price": 30, "is_veg": true },
+        { "name": "Paneer Roll", "price": 40, "is_veg": true },
+        { "name": "Veg Spring Roll", "price": 40, "is_veg": true },
+        { "name": "Veg Pokora", "price": 80, "is_veg": true },
+        { "name": "Paneer Pokora", "price": 120, "is_veg": true },
+        { "name": "Mix Pokada", "price": 100, "is_veg": true },
+        { "name": "Chicken Pokora", "price": 180, "is_veg": false },
+        { "name": "Egg Pokora", "price": 80, "is_veg": false },
+        { "name": "Bread Pokora", "price": 20, "is_veg": true }
+      ]
+    },
+    {
+      "id": "cat_noodles_maggi",
+      "name": "Noodles & Maggi",
+      "items": [
+        { "name": "Paneer Noodles", "price": 120, "is_veg": true },
+        { "name": "Egg Noodles", "price": 110, "is_veg": false },
+        { "name": "Veg Noodles", "price": 80, "is_veg": true },
+        { "name": "Non Veg Noodles", "price": 120, "is_veg": false },
+        { "name": "Veg Maggi", "price": 40, "is_veg": true },
+        { "name": "Egg Maggi", "price": 50, "is_veg": false },
+        { "name": "Classic Maggi", "price": 30, "is_veg": true }
+      ]
+    },
+    {
+      "id": "cat_chilly_dishes",
+      "name": "Chilly Dishes",
+      "items": [
+        { "name": "Paneer Chilly Dry", "price": 150, "is_veg": true },
+        { "name": "Paneer Manchurian", "price": 160, "is_veg": true },
+        { "name": "Paneer Chilly Gravy", "price": 140, "is_veg": true },
+        { "name": "Garlic Paneer", "price": 160, "is_veg": true },
+        { "name": "Paneer 65", "price": 180, "is_veg": true },
+        { "name": "Chicken Chilly Dry", "price": 170, "is_veg": false },
+        { "name": "Chicken Chilly Gravy", "price": 160, "is_veg": false },
+        { "name": "Chicken Manchurian", "price": 180, "is_veg": false },
+        { "name": "Garlic Chicken", "price": 180, "is_veg": false },
+        { "name": "Chicken 65", "price": 180, "is_veg": false },
+        { "name": "Veg Manchurian", "price": 100, "is_veg": true },
+        { "name": "Crispy Baby Corn", "price": 160, "is_veg": true },
+        { "name": "Baby Corn Chilly", "price": 150, "is_veg": true },
+        { "name": "Mushroom Chilly Dry", "price": 150, "is_veg": true },
+        { "name": "Crispy Mushroom", "price": 150, "is_veg": true },
+        { "name": "Mushroom Chilly Gravy", "price": 140, "is_veg": true },
+        { "name": "Chicken Lollypop", "price": 200, "is_veg": false }
+      ]
+    },
+    {
+      "id": "cat_sweets",
+      "name": "Sweets",
+      "items": [
+        { "name": "Kuladh Kheer", "price": 50, "is_veg": true },
+        { "name": "Gulab Jamun", "price": 30, "is_veg": true },
+        { "name": "Rasmalai", "price": 50, "is_veg": true },
+        { "name": "Rasgulla", "price": 30, "is_veg": true },
+        { "name": "Launglatta", "price": 35, "is_veg": true }
+      ]
+    },
+    {
+      "id": "cat_paneer",
+      "name": "Paneer & Veg Sabzi",
+      "items": [
+        { "name": "Paneer Butter Masala", "price": 180, "is_veg": true },
+        { "name": "Paneer Masala", "price": 180, "is_veg": true },
+        { "name": "Paneer Do Payaja", "price": 180, "is_veg": true },
+        { "name": "Paneer Handi", "price": 190, "is_veg": true },
+        { "name": "Paneer Kadhai", "price": 190, "is_veg": true },
+        { "name": "Paneer Dehati", "price": 190, "is_veg": true },
+        { "name": "Mutter Paneer", "price": 180, "is_veg": true },
+        { "name": "Sahi Paneer", "price": 180, "is_veg": true },
+        { "name": "Paneer Khurma", "price": 190, "is_veg": true },
+        { "name": "Paneer Diwani", "price": 190, "is_veg": true },
+        { "name": "Paneer Panjabi", "price": 190, "is_veg": true },
+        { "name": "Paneer Bhurji", "price": 150, "is_veg": true },
+        { "name": "Paneer Chatpata", "price": 180, "is_veg": true },
+        { "name": "Malai Kofta", "price": 190, "is_veg": true },
+        { "name": "Aloo Bhujiya", "price": 80, "is_veg": true },
+        { "name": "Jeera Aloo", "price": 80, "is_veg": true },
+        { "name": "Aloo Dum", "price": 80, "is_veg": true }
+      ]
+    },
+    {
+      "id": "cat_dal",
+      "name": "Dal",
+      "items": [
+        { "name": "Dal Plain", "price": 60, "is_veg": true },
+        { "name": "Dal Fry", "price": 80, "is_veg": true },
+        { "name": "Dal Makhani", "price": 100, "is_veg": true },
+        { "name": "Dal Tarka", "price": 80, "is_veg": true }
+      ]
+    },
+    {
+      "id": "cat_rice",
+      "name": "Rice & Biryani",
+      "items": [
+        { "name": "Plain Rice", "price": 80, "is_veg": true },
+        { "name": "Veg Fried Rice", "price": 80, "is_veg": true },
+        { "name": "Jeera Rice", "price": 80, "is_veg": true },
+        { "name": "Paneer Fried Rice", "price": 120, "is_veg": true },
+        { "name": "Mushroom Fried Rice", "price": 120, "is_veg": true },
+        { "name": "Mix Veg Fried Rice", "price": 130, "is_veg": true },
+        { "name": "Veg Pulao", "price": 80, "is_veg": true },
+        { "name": "Peas Pulao", "price": 80, "is_veg": true },
+        { "name": "Veg Biryani", "price": 120, "is_veg": true },
+        { "name": "Paneer Biryani", "price": 130, "is_veg": true },
+        { "name": "Paneer Chilly Rice", "price": 120, "is_veg": true },
+        { "name": "Egg Fried Rice", "price": 110, "is_veg": false },
+        { "name": "Chicken Fried Rice", "price": 120, "is_veg": false },
+        { "name": "Egg Biryani", "price": 110, "is_veg": false },
+        { "name": "Chicken Biryani", "price": 130, "is_veg": false },
+        { "name": "Mutton Biryani", "price": 180, "is_veg": false },
+        { "name": "Chicken Chilly Rice", "price": 130, "is_veg": false },
+        { "name": "Mix Non Veg Fried Rice", "price": 140, "is_veg": false }
+      ]
+    },
+    {
+      "id": "cat_paratha",
+      "name": "Paratha",
+      "items": [
+        { "name": "Plain Paratha", "price": 15, "is_veg": true },
+        { "name": "Aloo Paratha", "price": 25, "is_veg": true },
+        { "name": "Paneer Paratha", "price": 40, "is_veg": true },
+        { "name": "Mix Paratha", "price": 40, "is_veg": true },
+        { "name": "Onion Paratha", "price": 25, "is_veg": true },
+        { "name": "Sattu Paratha", "price": 25, "is_veg": true },
+        { "name": "Egg Paratha", "price": 40, "is_veg": false },
+        { "name": "Methi Paratha", "price": 25, "is_veg": true }
+      ]
+    }
+  ]
+}
