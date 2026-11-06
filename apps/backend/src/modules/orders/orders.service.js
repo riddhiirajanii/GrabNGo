@@ -4,7 +4,6 @@ const config = require('../../config');
 const queueEstimator = require('../queue_estimator/queue_estimator.service');
 const { encryptPickupPin, decryptPickupPin, verifyPickupPin } = require('../../database/pickup_pin_crypto');
 
-const ACTIVE_STATUSES = ['PLACED', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP'];
 const VALID_NEXT = {
   PLACED: ['PREPARING'],
   CONFIRMED: ['PREPARING'],
@@ -44,12 +43,17 @@ class OrdersService {
       where: { outletId },
       include: { variants: true }
     });
-    return inputs.map(input => {
+    const limits = config.CART_LIMITS;
+    const validatedByItemAndVariant = new Map();
+    const quantitiesByDish = new Map();
+    let totalQuantity = 0;
+
+    for (const input of inputs) {
       const item = menuItems.find(row => row.name === input.name);
       if (!item) throw new Error(`Item not found in current menu: ${input.name}`);
       if (!item.isAvailable) throw new Error(`${item.name} is currently unavailable`);
       const qty = Number(input.qty);
-      if (!Number.isInteger(qty) || qty < 1 || qty > 20) throw new Error('Item quantity must be between 1 and 20');
+      if (!Number.isInteger(qty) || qty < 1) throw new Error('Each dish quantity must be a positive integer');
       let price = Number(item.price);
       let variant = null;
       if (item.variants.length) {
@@ -61,8 +65,29 @@ class OrdersService {
         throw new Error(`No size option exists for ${item.name}`);
       }
       if (!Number.isFinite(price) || price < 0) throw new Error(`Invalid menu price for ${item.name}`);
-      return { name: item.name, variant, qty, price, categoryId: item.categoryId, menuItemId: item.id };
-    });
+
+      const dishQuantity = (quantitiesByDish.get(item.id) || 0) + qty;
+      if (dishQuantity > limits.maxQuantityPerDish) {
+        throw new Error(`Dish quantity limit exceeded: maximum ${limits.maxQuantityPerDish} units allowed for ${item.name}`);
+      }
+      totalQuantity += qty;
+      if (totalQuantity > limits.maxTotalQuantity) {
+        throw new Error(`Cart quantity limit exceeded: maximum ${limits.maxTotalQuantity} total items`);
+      }
+      quantitiesByDish.set(item.id, dishQuantity);
+
+      const lineKey = JSON.stringify([item.id, variant]);
+      const existing = validatedByItemAndVariant.get(lineKey);
+      if (existing) existing.qty += qty;
+      else validatedByItemAndVariant.set(lineKey, {
+        name: item.name, variant, qty, price, categoryId: item.categoryId, menuItemId: item.id
+      });
+    }
+
+    if (quantitiesByDish.size > limits.maxDistinctDishes) {
+      throw new Error(`Order quantity limit exceeded: maximum ${limits.maxDistinctDishes} different dishes`);
+    }
+    return [...validatedByItemAndVariant.values()];
   }
 
   async quoteOrder(payload = {}) {
@@ -154,6 +179,11 @@ class OrdersService {
     if (!row) return null;
     const order = mapOrder(row, true);
     const outlet = await prisma.outlet.findUnique({ where: { id: order.outletId } });
+    const preparationOrders = await prisma.order.findMany({
+      where: { outletId: order.outletId, status: { in: queueEstimator.PREPARATION_STATUSES } },
+      select: { id: true, outletId: true, token: true, status: true, placedAt: true }
+    });
+    const queuePosition = queueEstimator.calculateQueuePositions(preparationOrders, order.outletId).get(order.id) || null;
     const ready = new Date(order.estimatedReadyAt);
     const now = new Date();
     const remaining = Math.max(0, Math.ceil((ready - now) / 1000));
@@ -170,7 +200,9 @@ class OrdersService {
       progressPct: done ? 100 : Math.min(99, Math.round(elapsed / duration * 100)),
       placedAt: order.placedAt, estimatedReadyAt: order.estimatedReadyAt,
       estimatedMinutes: order.estimatedMinutes, completedAt: order.completedAt,
-      readyAt: order.readyAt, isReadyForPickup: order.status === 'READY_FOR_PICKUP'
+      readyAt: order.readyAt, isReadyForPickup: order.status === 'READY_FOR_PICKUP',
+      queuePosition: queuePosition?.position ?? null,
+      ordersAhead: queuePosition?.ordersAhead ?? null
     };
   }
 
@@ -179,10 +211,37 @@ class OrdersService {
     if (filters.outletId) where.outletId = filters.outletId;
     if (filters.status) where.status = filters.status;
     if (filters.studentRoll) where.studentRoll = String(filters.studentRoll).toUpperCase();
-    const rows = await prisma.order.findMany({
+    let rows = await prisma.order.findMany({
       where, include: { items: true }, orderBy: { placedAt: 'desc' }, take: 500
     });
-    return rows.map(row => mapOrder(row, Boolean(filters.studentRoll)));
+
+    let queuePositions = new Map();
+    if (filters.outletId && !filters.studentRoll) {
+      const activeRows = await prisma.order.findMany({
+        where: {
+          outletId: filters.outletId,
+          status: { in: [...queueEstimator.PREPARATION_STATUSES, 'READY_FOR_PICKUP'] }
+        },
+        include: { items: true }
+      });
+      queuePositions = queueEstimator.calculateQueuePositions(activeRows, filters.outletId);
+      const activeRowsMatchingFilter = filters.status
+        ? activeRows.filter(row => row.status === filters.status)
+        : activeRows;
+      const rowsById = new Map(rows.map(row => [row.id, row]));
+      for (const row of activeRowsMatchingFilter) rowsById.set(row.id, row);
+      rows = [...rowsById.values()];
+    }
+
+    return rows.map(row => ({
+      ...mapOrder(row, Boolean(filters.studentRoll)),
+      ...(filters.outletId && !filters.studentRoll
+        ? {
+            queuePosition: queuePositions.get(row.id)?.position ?? null,
+            ordersAhead: queuePositions.get(row.id)?.ordersAhead ?? null
+          }
+        : {})
+    }));
   }
 
   async getOrderById(id) {

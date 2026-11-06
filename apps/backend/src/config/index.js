@@ -9,6 +9,11 @@ const path = require('path');
 module.exports = {
   PORT: process.env.PORT || 3000,
   API_PREFIX: '/api/v1',
+  CART_LIMITS: {
+    maxQuantityPerDish: 10,
+    maxTotalQuantity: 30,
+    maxDistinctDishes: 15
+  },
   CAMPUS: {
     name: 'Indian Institute of Technology Patna',
     code: 'IITP',

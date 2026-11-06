@@ -6,6 +6,7 @@ const http = require('http');
 const os = require('os');
 const path = require('path');
 const fs = require('fs');
+const backendCartLimits = require('./apps/backend/src/config').CART_LIMITS;
 
 process.env.JWT_SECRET = 'integration-test-secret-which-is-longer-than-32-chars';
 process.env.GNG_DATA_DIR = path.join(os.tmpdir(), `grabngo-test-${process.pid}`);
@@ -220,6 +221,92 @@ server.listen(TEST_PORT, async () => {
     }, studentToken);
     if (quote.status !== 200) throw new Error(`Quote failed: ${JSON.stringify(quote.body)}`);
     console.log('PASS server-side checkout quote');
+
+    const frontendSource = fs.readFileSync(path.join(__dirname, 'js/consumer_app.js'), 'utf8');
+    const frontendLimitsBlock = frontendSource.match(/const CART_LIMITS = Object\.freeze\(\{([\s\S]*?)\}\);/);
+    if (!frontendLimitsBlock) throw new Error('Frontend cart limits configuration was not found');
+    for (const [key, backendKey] of [
+      ['maxQuantityPerDish', 'maxQuantityPerDish'],
+      ['maxTotalQuantity', 'maxTotalQuantity'],
+      ['maxDistinctDishes', 'maxDistinctDishes']
+    ]) {
+      const match = frontendLimitsBlock[1].match(new RegExp(`${key}:\\s*(\\d+)`));
+      if (!match || Number(match[1]) !== backendCartLimits[backendKey]) {
+        throw new Error(`Frontend and backend cart limit mismatch for ${key}`);
+      }
+    }
+    console.log('PASS frontend and backend cart limits match');
+
+    const menuResponse = await request(`/api/v1/outlets/${outletId}/menu`);
+    if (menuResponse.status !== 200) throw new Error('Could not load menu for cart limit tests');
+    const menuItems = menuResponse.body.data.categories.flatMap(category => category.items || []);
+    const orderLine = (item, qty = 1, variantIndex = 0) => ({
+      name: item.name,
+      ...(item.variants?.length ? { variant: item.variants[variantIndex % item.variants.length].label } : {}),
+      qty
+    });
+    const quoteCart = items => request('/api/v1/orders/quote', 'POST', { outletId, items }, studentToken);
+    const rejectQuote = async (items, messagePart, label) => {
+      const result = await quoteCart(items);
+      if (result.status !== 400 || !String(result.body.message).toLowerCase().includes(messagePart.toLowerCase())) {
+        throw new Error(`${label} was not rejected as expected: ${JSON.stringify(result.body)}`);
+      }
+      console.log(`PASS ${label}`);
+    };
+
+    const firstDish = menuItems[0];
+    const tenUnitQuote = await quoteCart([orderLine(firstDish, 10)]);
+    if (tenUnitQuote.status !== 200 || tenUnitQuote.body.data.items[0].qty !== 10) {
+      throw new Error('Maximum per-dish quantity should be accepted');
+    }
+    console.log('PASS per-dish quantity boundary of 10');
+    await rejectQuote([orderLine(firstDish, 11)], 'quantity limit', 'per-dish quantity 11 rejected');
+    await rejectQuote([orderLine(firstDish, 6), orderLine(firstDish, 5)], 'quantity limit', 'duplicate lines cannot bypass per-dish limit');
+
+    const variantDish = menuItems.find(item => item.variants?.length >= 2);
+    if (variantDish) {
+      await rejectQuote([orderLine(variantDish, 6, 0), orderLine(variantDish, 5, 1)], 'quantity limit', 'variants share the per-dish limit');
+      const validVariantQuote = await quoteCart([orderLine(variantDish, 5, 0), orderLine(variantDish, 5, 1)]);
+      if (validVariantQuote.status !== 200 || validVariantQuote.body.data.items.length !== 2 ||
+          validVariantQuote.body.data.items.reduce((sum, item) => sum + item.qty, 0) !== 10) {
+        throw new Error('Different variants of one dish should share the limit while remaining separate priced lines');
+      }
+      console.log('PASS different variants remain separate priced lines under one dish limit');
+    } else {
+      throw new Error('Menu needs a dish with two variants to test variant aggregation');
+    }
+    const mergedDuplicateQuote = await quoteCart([orderLine(firstDish, 3), orderLine(firstDish, 7)]);
+    if (mergedDuplicateQuote.status !== 200 || mergedDuplicateQuote.body.data.items.length !== 1 || mergedDuplicateQuote.body.data.items[0].qty !== 10) {
+      throw new Error('Valid duplicate order lines should be combined');
+    }
+    console.log('PASS valid duplicate order lines are combined');
+
+    const firstFourDishes = menuItems.slice(0, 4);
+    if (firstFourDishes.length < 4) throw new Error('Menu needs four dishes for total quantity tests');
+    const thirtyItemsQuote = await quoteCart(firstFourDishes.slice(0, 3).map(item => orderLine(item, 10)));
+    if (thirtyItemsQuote.status !== 200) throw new Error(`Total quantity 30 should be accepted: ${JSON.stringify(thirtyItemsQuote.body)}`);
+    console.log('PASS total cart quantity boundary of 30');
+    await rejectQuote([...firstFourDishes.slice(0, 3).map(item => orderLine(item, 10)), orderLine(firstFourDishes[3], 1)], 'quantity limit', 'total quantity 31 rejected');
+    await rejectQuote([orderLine(firstDish, 0)], 'positive integer', 'zero quantity rejected');
+    await rejectQuote([orderLine(firstDish, 1.5)], 'positive integer', 'fractional quantity rejected');
+
+    if (menuItems.length < backendCartLimits.maxDistinctDishes + 1) {
+      throw new Error(`Menu needs at least ${backendCartLimits.maxDistinctDishes + 1} dishes for distinct dish tests`);
+    }
+    const fifteenDishQuote = await quoteCart(menuItems.slice(0, 15).map(item => orderLine(item)));
+    if (fifteenDishQuote.status !== 200) throw new Error(`15 distinct dishes should be accepted: ${JSON.stringify(fifteenDishQuote.body)}`);
+    console.log('PASS distinct dish boundary of 15');
+    await rejectQuote(menuItems.slice(0, 16).map(item => orderLine(item)), 'different dishes', '16th distinct dish rejected');
+
+    const invalidDirectOrder = await request('/api/v1/orders', 'POST', {
+      outletId,
+      studentPhone: '9999999999',
+      items: [orderLine(firstDish, 6), orderLine(firstDish, 5)]
+    }, studentToken);
+    if (invalidDirectOrder.status !== 400 || !String(invalidDirectOrder.body.message).toLowerCase().includes('quantity limit')) {
+      throw new Error(`Direct invalid order should be rejected by backend: ${JSON.stringify(invalidDirectOrder.body)}`);
+    }
+    console.log('PASS direct order endpoint rejects over-limit payload');
 
     const orderResponse = await request('/api/v1/orders', 'POST', {
       outletId,

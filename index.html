@@ -115,20 +115,6 @@
     </div>
   </header>
 
-  <!-- Campus Status Strip -->
-  <div class="campus-status-strip">
-    <div class="status-strip-content">
-      <div class="status-pill-pulse">
-        <span class="pulse-dot"></span>
-        <span>4 Food Court Counters Live • Express Pickup Active</span>
-      </div>
-      <div class="status-info-tags">
-        <span class="status-item">Current Avg Prep: <strong>~12 mins</strong></span>
-        <span class="status-item">Contactless Express Token Handover</span>
-      </div>
-    </div>
-  </div>
-
   <!-- Main Container -->
   <main class="main-container">
 
@@ -427,6 +413,12 @@
     </div>
 
     <div class="cart-body">
+      <div id="cart-limit-summary" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;" aria-live="polite">
+        <div id="cart-items-count">Items in cart: 0</div>
+        <div id="cart-dishes-count">Different dishes: 0</div>
+        <div id="cart-limit-message" style="color: var(--secondary); font-weight: 700;"></div>
+      </div>
+
       <!-- Empty State -->
       <div class="cart-empty-state" id="cart-empty-state">
         <h4 style="font-size: 1.1rem; color: var(--secondary); margin-bottom: 0.25rem;">Your Cart is Empty</h4>
@@ -619,6 +611,10 @@
           <div class="token-headline">Your Express Pickup Token</div>
           <div class="token-mega-number" id="track-token-display">#A-104</div>
           <div class="token-outlet-info" id="track-outlet-name">Arya Services Express Counter</div>
+          <div id="track-queue-summary" style="display: flex; justify-content: center; gap: 1.25rem; flex-wrap: wrap; margin-top: 0.75rem; color: var(--secondary); font-size: 0.85rem;">
+            <span>Preparation position: <strong id="track-queue-position">Calculating…</strong></span>
+            <span>Orders ahead: <strong id="track-orders-ahead">Calculating…</strong></span>
+          </div>
           <div class="token-eta-pill">
             <span>⏱Estimated Ready In:</span>
             <strong id="track-countdown-timer">12m 45s</strong>
