@@ -336,9 +336,15 @@ function renderKDS() {
   // 1. Update Stats Strip
   const allOrders = VendorState.kdsOrders;
   const activeOrders = allOrders.filter(o => o.status === 'PLACED' || o.status === 'PREPARING' || o.status === 'CONFIRMED' || o.status === 'READY_FOR_PICKUP');
-  const incoming = allOrders.filter(o => o.status === 'PLACED');
-  const cooking = allOrders.filter(o => o.status === 'PREPARING' || o.status === 'CONFIRMED');
-  const ready = allOrders.filter(o => o.status === 'READY_FOR_PICKUP');
+  const byQueueOrder = (a, b) => {
+    if (Number.isInteger(a.queuePosition) && Number.isInteger(b.queuePosition)) return a.queuePosition - b.queuePosition;
+    const aSequence = Number(String(a.token || '').match(/-(\d+)$/)?.[1] || Number.MAX_SAFE_INTEGER);
+    const bSequence = Number(String(b.token || '').match(/-(\d+)$/)?.[1] || Number.MAX_SAFE_INTEGER);
+    return aSequence - bSequence;
+  };
+  const incoming = allOrders.filter(o => o.status === 'PLACED').sort(byQueueOrder);
+  const cooking = allOrders.filter(o => o.status === 'PREPARING' || o.status === 'CONFIRMED').sort(byQueueOrder);
+  const ready = allOrders.filter(o => o.status === 'READY_FOR_PICKUP').sort(byQueueOrder);
   const completed = allOrders.filter(o => o.status === 'COMPLETED');
 
   const activeStatEl = document.getElementById('kds-stat-active-count');
@@ -444,6 +450,7 @@ function createKDSTicketHtml(order, stage) {
       <div class="ticket-top-row">
         <span class="ticket-token-badge">🎫 #${escapeVendorHtml(order.token)}</span>
         <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+          ${['incoming', 'cooking'].includes(stage) && Number.isInteger(order.queuePosition) ? `<span class="ticket-time-chip">Queue #${order.queuePosition} · ${order.ordersAhead} ahead</span>` : ''}
           ${elapsedBadge}
         </div>
       </div>

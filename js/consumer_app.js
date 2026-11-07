@@ -23,6 +23,13 @@ const AppState = {
   menuLoaded: false
 };
 
+// Keep these values aligned with the backend CART_LIMITS configuration.
+const CART_LIMITS = Object.freeze({
+  maxQuantityPerDish: 10,
+  maxTotalQuantity: 30,
+  maxDistinctDishes: 15
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   initAuth();
   initCart();
@@ -523,21 +530,23 @@ function reorderPreviousItems(orderId) {
     return;
   }
 
-  order.items.forEach(item => {
-    const cartItemId = item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const existing = AppState.cart.find(c => c.name === item.name && c.variant === item.variant);
-    if (existing) {
-      existing.qty += (item.qty || 1);
-    } else {
-      AppState.cart.push({
-        id: cartItemId,
-        name: item.name,
-        variant: item.variant || null,
-        unitPrice: Number(item.price) || 0,
-        qty: Number(item.qty) || 1
-      });
+  const reorderedCart = AppState.cart.map(item => ({ ...item }));
+  for (const item of order.items) {
+    const cartItem = {
+      id: item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      name: item.name,
+      variant: item.variant || null,
+      unitPrice: Number(item.price) || 0,
+      qty: Number(item.qty) || 1
+    };
+    const limitError = getCartAdditionError(cartItem, cartItem.qty, reorderedCart);
+    if (limitError) {
+      showToast(`Could not reorder: ${limitError}`, '⚠️');
+      return;
     }
-  });
+    mergeCartLine(reorderedCart, cartItem);
+  }
+  AppState.cart = reorderedCart;
 
   updateCartBadges();
   renderMenuItems();
@@ -859,13 +868,19 @@ function addZomatoItemToCart(itemId) {
     }
   }
 
-  AppState.cart.push({
+  const cartItem = {
     id: itemId,
     name: item.name,
     variant: selectedVariant,
     unitPrice: unitPrice,
     qty: 1
-  });
+  };
+  const limitError = getCartAdditionError(cartItem, 1);
+  if (limitError) {
+    showToast(limitError, '⚠️');
+    return;
+  }
+  mergeCartLine(AppState.cart, cartItem);
 
   updateCartBadges();
   renderMenuItems();
@@ -922,7 +937,9 @@ function renderMenuItems() {
 
         <div class="zomato-dishes-list" id="list-${cat.id}">
           ${matchedItems.map((item, itemIdx) => {
-            const cartItem = AppState.cart.find(c => c.id === item.id);
+            const dishKey = getDishKey(item);
+            const cartItem = AppState.cart.find(c => getDishKey(c) === dishKey);
+            const dishQuantity = getCartDishQuantity(item);
             const hasVariants = Array.isArray(item.variants) && item.variants.length > 0;
             
             let activeVariantLabel = null;
@@ -978,11 +995,11 @@ function renderMenuItems() {
                     ` : cartItem ? `
                       <div class="zomato-qty-stepper">
                         <button class="zomato-stepper-btn" onclick="modifyCartQty('${item.id}', -1)">−</button>
-                        <span class="zomato-stepper-val">${cartItem.qty}</span>
-                        <button class="zomato-stepper-btn" onclick="modifyCartQty('${item.id}', 1)">+</button>
+                        <span class="zomato-stepper-val">${dishQuantity}</span>
+                        <button class="zomato-stepper-btn" onclick="modifyCartQty('${item.id}', 1)" ${dishQuantity >= CART_LIMITS.maxQuantityPerDish || getCartTotalQuantity() >= CART_LIMITS.maxTotalQuantity ? 'disabled title="Cart quantity limit reached"' : ''}>+</button>
                       </div>
                     ` : `
-                      <button class="zomato-add-button" onclick="addZomatoItemToCart('${item.id}')">
+                      <button class="zomato-add-button" onclick="addZomatoItemToCart('${item.id}')" ${getCartDishCount() >= CART_LIMITS.maxDistinctDishes ? `disabled title="Maximum ${CART_LIMITS.maxDistinctDishes} different dishes per cart"` : ''}>
                         ADD <span style="font-size: 1.1rem; line-height: 1;">+</span>
                       </button>
                     `}
@@ -1085,6 +1102,63 @@ function findMenuItemById(itemId) {
   return null;
 }
 
+function getDishKey(item) {
+  return String(item?.name || '').trim().toLowerCase();
+}
+
+function getCartTotalQuantity(cart = AppState.cart) {
+  return cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+}
+
+function getCartDishCount(cart = AppState.cart) {
+  return new Set(cart.map(getDishKey).filter(Boolean)).size;
+}
+
+function getCartDishQuantity(item, cart = AppState.cart) {
+  const dishKey = getDishKey(item);
+  return cart.reduce((sum, cartItem) => sum + (getDishKey(cartItem) === dishKey ? (Number(cartItem.qty) || 0) : 0), 0);
+}
+
+function getCartAdditionError(item, quantity, cart = AppState.cart) {
+  const amount = Number(quantity);
+  if (!Number.isInteger(amount) || amount < 1) return 'Dish quantity must be a positive whole number.';
+  const dishKey = getDishKey(item);
+  const currentDishQuantity = getCartDishQuantity(item, cart);
+  if (currentDishQuantity + amount > CART_LIMITS.maxQuantityPerDish) {
+    return `Maximum ${CART_LIMITS.maxQuantityPerDish} units allowed per dish.`;
+  }
+  if (getCartTotalQuantity(cart) + amount > CART_LIMITS.maxTotalQuantity) {
+    return `Your cart can contain at most ${CART_LIMITS.maxTotalQuantity} items.`;
+  }
+  if (!cart.some(cartItem => getDishKey(cartItem) === dishKey) && getCartDishCount(cart) >= CART_LIMITS.maxDistinctDishes) {
+    return `Your cart can contain at most ${CART_LIMITS.maxDistinctDishes} different dishes.`;
+  }
+  return null;
+}
+
+function mergeCartLine(cart, item) {
+  const existing = cart.find(cartItem => getDishKey(cartItem) === getDishKey(item) && (cartItem.variant || null) === (item.variant || null));
+  if (existing) existing.qty += Number(item.qty) || 0;
+  else cart.push({ ...item, qty: Number(item.qty) || 0 });
+}
+
+function getCartLimitViolation(cart = AppState.cart) {
+  const dishQuantities = new Map();
+  let totalQuantity = 0;
+  for (const item of cart) {
+    const quantity = Number(item.qty);
+    if (!Number.isInteger(quantity) || quantity < 1) return 'Each dish quantity must be a positive whole number.';
+    const dishKey = getDishKey(item);
+    const dishQuantity = (dishQuantities.get(dishKey) || 0) + quantity;
+    if (dishQuantity > CART_LIMITS.maxQuantityPerDish) return `Maximum ${CART_LIMITS.maxQuantityPerDish} units allowed per dish.`;
+    dishQuantities.set(dishKey, dishQuantity);
+    totalQuantity += quantity;
+  }
+  if (totalQuantity > CART_LIMITS.maxTotalQuantity) return `Your cart can contain at most ${CART_LIMITS.maxTotalQuantity} items.`;
+  if (dishQuantities.size > CART_LIMITS.maxDistinctDishes) return `Your cart can contain at most ${CART_LIMITS.maxDistinctDishes} different dishes.`;
+  return null;
+}
+
 function addItemToCart(itemId) {
   const item = findMenuItemById(itemId);
   if (!item) return;
@@ -1099,13 +1173,19 @@ function addItemToCart(itemId) {
     unitPrice = Number(price);
   }
 
-  AppState.cart.push({
+  const cartItem = {
     id: itemId,
     name: item.name,
     variant: selectedVariant,
     unitPrice: unitPrice,
     qty: 1
-  });
+  };
+  const limitError = getCartAdditionError(cartItem, 1);
+  if (limitError) {
+    showToast(limitError, '⚠️');
+    return;
+  }
+  mergeCartLine(AppState.cart, cartItem);
 
   updateCartBadges();
   renderMenuItems();
@@ -1114,9 +1194,34 @@ function addItemToCart(itemId) {
 }
 
 function modifyCartQty(itemId, delta) {
-  const index = AppState.cart.findIndex(c => c.id === itemId);
+  const menuItem = findMenuItemById(itemId);
+  const dishKey = menuItem ? getDishKey(menuItem) : '';
+  const index = AppState.cart.findIndex(c => c.id === itemId || (dishKey && getDishKey(c) === dishKey));
   if (index === -1) return;
 
+  if (delta > 0) {
+    const limitError = getCartAdditionError(AppState.cart[index], delta);
+    if (limitError) {
+      showToast(limitError, '⚠️');
+      return;
+    }
+  }
+  applyCartQuantityChange(index, delta);
+}
+
+function modifyCartQtyByIndex(index, delta) {
+  if (!AppState.cart[index]) return;
+  if (delta > 0) {
+    const limitError = getCartAdditionError(AppState.cart[index], delta);
+    if (limitError) {
+      showToast(limitError, '⚠️');
+      return;
+    }
+  }
+  applyCartQuantityChange(index, delta);
+}
+
+function applyCartQuantityChange(index, delta) {
   AppState.cart[index].qty += delta;
   if (AppState.cart[index].qty <= 0) {
     const removedName = AppState.cart[index].name;
@@ -1145,6 +1250,23 @@ function renderCart() {
 
   if (!itemsContainer || !emptyState || !footer) return;
 
+  const totalQuantity = getCartTotalQuantity();
+  const dishCount = getCartDishCount();
+  const itemsCount = document.getElementById('cart-items-count');
+  const dishesCount = document.getElementById('cart-dishes-count');
+  const limitMessage = document.getElementById('cart-limit-message');
+  if (itemsCount) itemsCount.textContent = `Items in cart: ${totalQuantity} / ${CART_LIMITS.maxTotalQuantity}`;
+  if (dishesCount) dishesCount.textContent = `Different dishes: ${dishCount} / ${CART_LIMITS.maxDistinctDishes}`;
+  if (limitMessage) {
+    limitMessage.textContent = totalQuantity >= CART_LIMITS.maxTotalQuantity
+      ? `Cart limit reached (${CART_LIMITS.maxTotalQuantity} items). Decrease a quantity or remove a dish to add more.`
+      : dishCount >= CART_LIMITS.maxDistinctDishes
+        ? `Dish limit reached (${CART_LIMITS.maxDistinctDishes} dishes). Remove a dish before adding another.`
+        : AppState.cart.some(item => getCartDishQuantity(item) >= CART_LIMITS.maxQuantityPerDish)
+          ? `A dish is at its maximum of ${CART_LIMITS.maxQuantityPerDish} units.`
+          : '';
+  }
+
   if (AppState.cart.length === 0) {
     emptyState.style.display = 'block';
     itemsContainer.style.display = 'none';
@@ -1156,7 +1278,7 @@ function renderCart() {
   itemsContainer.style.display = 'block';
   footer.style.display = 'block';
 
-  itemsContainer.innerHTML = AppState.cart.map(item => `
+  itemsContainer.innerHTML = AppState.cart.map((item, index) => `
     <div class="cart-item-row">
       <div class="cart-item-info">
         <h5 class="cart-item-title">${escapeOrderHtml(item.name)}</h5>
@@ -1165,11 +1287,11 @@ function renderCart() {
       </div>
       <div class="cart-item-controls">
         <div class="item-qty-stepper">
-          <button class="stepper-btn" onclick="modifyCartQty('${item.id}', -1)">−</button>
+          <button class="stepper-btn" onclick="modifyCartQtyByIndex(${index}, -1)">−</button>
           <span class="stepper-val">${item.qty}</span>
-          <button class="stepper-btn" onclick="modifyCartQty('${item.id}', 1)">+</button>
+          <button class="stepper-btn" onclick="modifyCartQtyByIndex(${index}, 1)" ${getCartDishQuantity(item) >= CART_LIMITS.maxQuantityPerDish || totalQuantity >= CART_LIMITS.maxTotalQuantity ? 'disabled title="Cart quantity limit reached"' : ''}>+</button>
         </div>
-        <button class="btn-remove-cart-item" onclick="modifyCartQty('${item.id}', -999)" title="Remove item">✕</button>
+        <button class="btn-remove-cart-item" onclick="modifyCartQtyByIndex(${index}, -999)" title="Remove item">✕</button>
       </div>
     </div>
   `).join('');
@@ -1198,6 +1320,11 @@ function renderCart() {
 async function openCheckoutModal() {
   if (AppState.cart.length === 0) {
     showToast('Your cart is empty!', '⚠️');
+    return;
+  }
+  const limitError = getCartLimitViolation();
+  if (limitError) {
+    showToast(limitError, '⚠️');
     return;
   }
   closeCart();
@@ -1232,6 +1359,8 @@ async function openCheckoutModal() {
 
 async function placeOrder() {
   if (!AppState.user || !AppState.authToken) { showToast('Please sign in before placing an order.', '⚠️'); openAuthModal(); return; }
+  const limitError = getCartLimitViolation();
+  if (limitError) { showToast(limitError, '⚠️'); return; }
   const studentName = AppState.user.name;
   const studentRoll = AppState.user.roll;
   const studentPhone = document.getElementById('input-student-phone').value.trim();
@@ -1487,17 +1616,25 @@ function renderTrackingModalContent() {
   document.getElementById('track-token-display').innerHTML = `#${o.token}${o.pickupPin ? ` <span style="font-size: 0.9rem; font-weight: 700; color: #10b981; margin-left: 0.5rem; background: #ecfdf5; padding: 2px 8px; border-radius: 6px; border: 1px solid #10b981;">PIN: ${o.pickupPin}</span>` : ''}`;
   document.getElementById('track-outlet-name').textContent = o.outletName || 'Arya Services Express Counter';
 
+  const queuePosition = document.getElementById('track-queue-position');
+  const ordersAhead = document.getElementById('track-orders-ahead');
+  if (o.status === 'READY_FOR_PICKUP') {
+    if (queuePosition) queuePosition.textContent = 'Ready for pickup';
+    if (ordersAhead) ordersAhead.textContent = '—';
+  } else if (o.status === 'COMPLETED') {
+    if (queuePosition) queuePosition.textContent = 'Completed';
+    if (ordersAhead) ordersAhead.textContent = '—';
+  } else {
+    if (queuePosition) queuePosition.textContent = Number.isInteger(o.queuePosition) ? `${o.queuePosition}` : 'Calculating…';
+    if (ordersAhead) ordersAhead.textContent = Number.isInteger(o.ordersAhead) ? `${o.ordersAhead}` : 'Calculating…';
+  }
+
   const trackTimer = document.getElementById('track-countdown-timer');
-  const instructions = document.getElementById('track-pickup-instructions');
 
   if (o.status === 'COMPLETED') {
     if (trackTimer) trackTimer.innerHTML = '<span style="color: #10b981; font-weight: 800; font-size: 1.15rem;">✅ Order Completed</span>';
-    if (instructions) instructions.textContent = 'Meal handed over at express counter. Enjoy your meal!';
   } else if (o.status === 'READY_FOR_PICKUP') {
     if (trackTimer) trackTimer.innerHTML = '<span style="color: #10b981; font-weight: 800; font-size: 1.15rem;">🔔 Ready for Pickup!</span>';
-    if (instructions) instructions.textContent = `Walk to Express Counter at ${o.outletName || 'Arya Services'} and present token #${o.token} (PIN ${o.pickupPin || ''})`;
-  } else {
-    if (instructions) instructions.textContent = `Walk to Express Counter at ${o.outletName || 'Arya Services'}`;
   }
 
   const steps = ['PLACED', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'COMPLETED'];
@@ -1581,6 +1718,9 @@ function startCountdownTimer() {
           AppState.activeOrder.status = live.status;
           AppState.activeOrder.remainingSeconds = live.remainingSeconds;
           AppState.activeOrder.estimatedReadyAt = live.estimatedReadyAt;
+          AppState.activeOrder.estimatedMinutes = live.estimatedMinutes;
+          AppState.activeOrder.queuePosition = live.queuePosition;
+          AppState.activeOrder.ordersAhead = live.ordersAhead;
           localStorage.setItem('grabngo_active_order', JSON.stringify(AppState.activeOrder));
           if (live.status === 'COMPLETED') {
             handleOrderCompletion(AppState.activeOrder);
