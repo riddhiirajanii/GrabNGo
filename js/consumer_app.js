@@ -1630,16 +1630,11 @@ function renderTrackingModalContent() {
   }
 
   const trackTimer = document.getElementById('track-countdown-timer');
-  const instructions = document.getElementById('track-pickup-instructions');
 
   if (o.status === 'COMPLETED') {
     if (trackTimer) trackTimer.innerHTML = '<span style="color: #10b981; font-weight: 800; font-size: 1.15rem;">✅ Order Completed</span>';
-    if (instructions) instructions.textContent = 'Meal handed over at express counter. Enjoy your meal!';
   } else if (o.status === 'READY_FOR_PICKUP') {
     if (trackTimer) trackTimer.innerHTML = '<span style="color: #10b981; font-weight: 800; font-size: 1.15rem;">🔔 Ready for Pickup!</span>';
-    if (instructions) instructions.textContent = `Walk to Express Counter at ${o.outletName || 'Arya Services'} and present token #${o.token} (PIN ${o.pickupPin || ''})`;
-  } else {
-    if (instructions) instructions.textContent = `Walk to Express Counter at ${o.outletName || 'Arya Services'}`;
   }
 
   const steps = ['PLACED', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'COMPLETED'];
